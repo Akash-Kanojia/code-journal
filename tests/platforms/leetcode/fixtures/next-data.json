@@ -1,0 +1,31 @@
+{
+  "page": "/problems/[slug]/[[...tab]]",
+  "query": { "slug": "find-two-non-overlapping-sub-arrays-each-with-target-sum" },
+  "props": {
+    "pageProps": {
+      "dehydratedState": {
+        "queries": [
+          { "queryKey": ["globalData", {}], "state": { "data": {} } },
+          {
+            "queryKey": [
+              "questionDetail",
+              { "titleSlug": "find-two-non-overlapping-sub-arrays-each-with-target-sum" }
+            ],
+            "state": {
+              "data": {
+                "question": {
+                  "title": "Find Two Non-overlapping Sub-arrays Each With Target Sum",
+                  "titleSlug": "find-two-non-overlapping-sub-arrays-each-with-target-sum",
+                  "questionId": "1573",
+                  "questionFrontendId": "1477",
+                  "difficulty": "Medium",
+                  "isPaidOnly": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

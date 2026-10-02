@@ -1,0 +1,11 @@
+{
+  "status": "SUCCESS",
+  "view_mode": "runtime",
+  "total_test_cases": 1115,
+  "test_cases_processed": 12,
+  "view_cases": { "TLE": false, "segfault": true },
+  "message": {
+    "file_input": "1 2\n3",
+    "error": "Segmentation Fault (SIGSEGV)<br>Learn More about Seg Fault"
+  }
+}

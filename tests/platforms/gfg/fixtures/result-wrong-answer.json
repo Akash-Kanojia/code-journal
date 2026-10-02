@@ -1,0 +1,12 @@
+{
+  "status": "calculated",
+  "view_mode": "wrong_p",
+  "total_test_cases": 1115,
+  "test_cases_processed": 7,
+  "message": {
+    "file_input": "0 -1 2 -3 1\n-2",
+    "code_output": "false",
+    "file_output": "true",
+    "execution_time": "0.01"
+  }
+}

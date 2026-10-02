@@ -1,0 +1,23 @@
+{
+  "status_code": 20,
+  "lang": "cpp",
+  "run_success": false,
+  "compile_error": "Line 5: Char 5: error: non-void function does not return a value [-Werror,-Wreturn-type]",
+  "full_compile_error": "Line 5: Char 5: error: non-void function does not return a value [-Werror,-Wreturn-type]\n    5 |     }\n      |     ^\n1 error generated.",
+  "status_runtime": "N/A",
+  "memory": 0,
+  "question_id": "1",
+  "task_finish_time": 1790617909781,
+  "task_name": "judger.judgetask.Judge",
+  "finished": true,
+  "total_correct": null,
+  "total_testcases": null,
+  "runtime_percentile": null,
+  "status_memory": "N/A",
+  "memory_percentile": null,
+  "pretty_lang": "C++",
+  "submission_id": "1000000001",
+  "status_msg": "Compile Error",
+  "state": "SUCCESS",
+  "judger_status_code": 20
+}

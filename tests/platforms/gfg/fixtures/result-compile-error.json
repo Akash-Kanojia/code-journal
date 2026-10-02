@@ -1,0 +1,9 @@
+{
+  "status": "SUCCESS",
+  "view_mode": "compilation",
+  "total_test_cases": 0,
+  "test_cases_processed": 0,
+  "message": {
+    "error": "prog.cpp: In member function &#39;bool Solution::twoSum(std::vector&lt;int&gt;&amp;, int)&#39;:<br>prog.cpp:5:9: error: expected &#39;;&#39; before &#39;}&#39; token"
+  }
+}

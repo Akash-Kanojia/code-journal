@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Code Journal",
+  "version": "1.0.0",
+  "description": "Captures every LeetCode and GeeksforGeeks submission and commits it to your own GitHub repository.",
+  "minimum_chrome_version": "120",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://github.com/*", "https://api.github.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Code Journal",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/*"],
+      "js": ["leetcode-page.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.geeksforgeeks.org/*"],
+      "js": ["gfg-page.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://leetcode.com/*", "https://www.geeksforgeeks.org/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

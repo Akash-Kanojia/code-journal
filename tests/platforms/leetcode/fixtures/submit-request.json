@@ -1,0 +1,5 @@
+{
+  "lang": "cpp",
+  "question_id": "1",
+  "typed_code": "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // code-journal probe: wrong answer\n        return {0, 0};\n    }\n};"
+}

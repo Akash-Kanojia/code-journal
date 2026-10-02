@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Code Journal</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Code Journal</h1>
+    </header>
+
+    <section id="github">
+      <h2>GitHub</h2>
+      <p class="row"><span>Status</span><strong id="auth-status">…</strong></p>
+      <div id="auth-pending" hidden>
+        <p>Enter this code on GitHub:</p>
+        <p class="code" id="user-code"></p>
+        <div class="actions">
+          <button id="open-github">Open GitHub</button>
+          <button id="cancel-connect" class="secondary">Cancel</button>
+        </div>
+      </div>
+      <div id="auth-disconnected" hidden>
+        <label class="check"
+          ><input type="checkbox" id="allow-private" /> Allow private repositories</label
+        >
+        <details id="client-id-details">
+          <summary>OAuth App client id</summary>
+          <input id="client-id" placeholder="Iv1.… / Ov23…" spellcheck="false" />
+        </details>
+        <div class="actions"><button id="connect">Connect GitHub</button></div>
+      </div>
+      <div id="auth-connected" hidden>
+        <div class="actions">
+          <button id="disconnect" class="secondary">Disconnect GitHub</button>
+        </div>
+      </div>
+      <p class="error" id="auth-error" hidden></p>
+    </section>
+
+    <section id="repository">
+      <h2>Repository</h2>
+      <label
+        >Repository<select id="repo-select">
+          <option value="">—</option>
+        </select></label
+      >
+      <label
+        >Branch<select id="branch-select">
+          <option value="">—</option>
+        </select></label
+      >
+      <label
+        >Directory<input id="directory" placeholder="(repository root)" spellcheck="false"
+      /></label>
+      <div class="actions">
+        <button id="load-repos" class="secondary">Reload repositories</button>
+        <button id="save-settings">Save</button>
+      </div>
+      <p class="hint" id="settings-message" hidden></p>
+    </section>
+
+    <section id="sync">
+      <h2>Sync</h2>
+      <p class="counts">
+        <span>Pending <strong id="count-pending">0</strong></span>
+        <span>Synced <strong id="count-synced">0</strong></span>
+        <span>Failed <strong id="count-failed">0</strong></span>
+      </p>
+      <p class="hint" id="sync-info"></p>
+      <div class="actions">
+        <button id="sync-now" class="secondary">Sync now</button>
+        <button id="retry-failed" class="secondary">Retry failed</button>
+      </div>
+    </section>
+
+    <section id="history">
+      <h2>Recent submissions</h2>
+      <ul id="recent"></ul>
+    </section>
+
+    <footer>
+      Submitted code and its metadata are sent only to your selected GitHub repository.
+    </footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

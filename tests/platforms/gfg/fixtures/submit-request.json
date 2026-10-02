@@ -1,0 +1,6 @@
+{
+  "source": "https://www.geeksforgeeks.org",
+  "request_type": "solutionCheck",
+  "userCode": "class Solution {\n  public:\n    bool twoSum(vector<int>& arr, int target) {\n        // code-journal fixture\n        return false;\n    }\n};",
+  "language": "cpp"
+}

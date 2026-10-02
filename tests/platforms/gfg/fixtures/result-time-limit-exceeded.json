@@ -1,0 +1,11 @@
+{
+  "status": "SUCCESS",
+  "view_mode": "runtime",
+  "total_test_cases": 1115,
+  "test_cases_processed": 1010,
+  "view_cases": { "TLE": true },
+  "message": {
+    "exec_time": { "actual_exec_time": "3.62", "calculated_exec_time": "1.94" },
+    "time_upper_bound": "1.94"
+  }
+}

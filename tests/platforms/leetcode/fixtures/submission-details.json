@@ -1,0 +1,16 @@
+{
+  "data": {
+    "submissionDetails": {
+      "code": "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        return {};\n    }\n};",
+      "timestamp": 1790618000,
+      "lang": { "name": "cpp" },
+      "question": {
+        "questionId": "1",
+        "questionFrontendId": "1",
+        "title": "Two Sum",
+        "titleSlug": "two-sum",
+        "difficulty": "Easy"
+      }
+    }
+  }
+}

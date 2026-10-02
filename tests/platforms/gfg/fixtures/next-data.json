@@ -1,0 +1,22 @@
+{
+  "page": "/problems/[probResource]/[probType]",
+  "query": { "probResource": "key-pair5616", "probType": "1" },
+  "props": {
+    "pageProps": {
+      "initialState": {
+        "problemData": {
+          "allData": {
+            "probData": {
+              "id": 703092,
+              "problem_name": "Two Sum - Pair with Given Sum",
+              "slug": "key-pair5616",
+              "difficulty": "Easy",
+              "problem_level_text": "Easy",
+              "extra": { "problem_languages": ["cpp", "java", "python3", "csharp", "javascript"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}
