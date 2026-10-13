@@ -284,6 +284,37 @@ submission was made. It forwarded the submit request (with body) and every `v2/c
 the final result. Clicking **Run** first produced no messages. The isolated-world half (adapter →
 lifecycle logs) is covered by unit tests; it needs the installed extension to verify end to end.
 
+## History Import
+
+Past submissions are imported from a leetcode.com tab (`src/platforms/leetcode/history-importer.ts`):
+
+```graphql
+query codeJournalHistory($offset: Int!, $limit: Int!, $lastKey: String) {
+  submissionList(offset: $offset, limit: $limit, lastKey: $lastKey) {
+    lastKey hasNext
+    submissions { id titleSlug statusDisplay lang timestamp isPending }
+  }
+}
+```
+
+Without `questionSlug`, `submissionList` covers all problems, newest first, 20 per page. It has
+no `code` field, so each submission not yet stored is fetched with `submissionDetails`
+(`code timestamp statusCode runtimeDisplay totalCorrect totalTestcases lastTestcase
+expectedOutput codeOutput compileError runtimeError lang { name } question { … }`).
+
+- Queries and field names were **validated against the live schema on 2026-10-04**: unknown fields
+  return a 400 validation error, valid ones return `null` data when signed out. No real values were
+  observed, because no signed-in session was available. Parsing accepts `timestamp` as a string or
+  a number, and `isPending` as a boolean or "Pending".
+- Signed out, `submissionList.submissions` is `null`; the import stops with "make sure you are
+  signed in". The REST endpoint `/api/submissions/` also exists (401 when signed out) but is not used.
+- Pacing: one request per second; 429/5xx/network errors back off (honouring `Retry-After`, else
+  30 s doubling up to 5 min, 6 retries). Progress (offset, lastKey, counts) is saved after every
+  page in `storage.local` (`import.leetcode`), so an interrupted import resumes.
+- Mapping: status from `statusCode` (same codes as the check API), falling back to `statusDisplay`.
+  Runtime comes from `runtimeDisplay` ("4 ms"). Memory is **not** imported (unit unverified).
+  Failing testcase and errors are recorded as in live capture. `submittedAt` comes from `timestamp`.
+
 ## Known Limitations
 
 - Everything here is undocumented and can change; parsers must reject unexpected shapes and report

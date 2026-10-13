@@ -1,4 +1,4 @@
-import { isRecord, parseJson, readString } from '../../shared/json';
+import { isRecord, parseJson, readString, type JsonRecord } from '../../shared/json';
 import { toQuestion, type LeetCodeQuestion } from './question';
 
 /** Recovered from GraphQL `submissionDetails`, used when the submit request was not observed. */
@@ -9,6 +9,8 @@ export interface LeetCodeSubmissionDetails {
   /** ISO-8601, from `timestamp` (Unix seconds). */
   submittedAt?: string;
   question?: LeetCodeQuestion;
+  /** The whole `submissionDetails` node (result fields used by the history import). */
+  record: JsonRecord;
 }
 
 /** Parses the `submissionDetails` GraphQL response; undefined if it carries no code. */
@@ -23,7 +25,7 @@ export function parseSubmissionDetailsResponse(
   if (typeof details.code !== 'string') {
     return undefined;
   }
-  const result: LeetCodeSubmissionDetails = { code: details.code };
+  const result: LeetCodeSubmissionDetails = { code: details.code, record: details };
   const language = isRecord(details.lang) ? readString(details.lang.name) : undefined;
   if (language !== undefined) result.language = language;
   const timestamp = Number(details.timestamp);

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { isSubmissionStatus, SUBMISSION_STATUSES } from '../../src/core/models/submission-result';
 import { isPlatform, PLATFORMS } from '../../src/core/types/platform';
-import { isPopupRequest, isSubmissionCapturedRequest } from '../../src/core/types/messages';
+import {
+  isContentRequest,
+  isImportCommand,
+  isPopupRequest,
+  isSubmissionCapturedRequest,
+} from '../../src/core/types/messages';
 
 describe('core type guards', () => {
   it('recognises every declared submission status and nothing else', () => {
@@ -60,5 +65,23 @@ describe('core type guards', () => {
         false,
       );
     }
+  });
+});
+
+describe('content requests', () => {
+  it('accepts import batches and id lookups from content scripts, within limits', () => {
+    expect(isContentRequest({ type: 'SUBMISSIONS_IMPORTED', submissions: [] })).toBe(true);
+    expect(
+      isContentRequest({ type: 'SUBMISSIONS_IMPORTED', submissions: new Array(101).fill({}) }),
+    ).toBe(false);
+    expect(
+      isContentRequest({ type: 'FILTER_UNKNOWN_SUBMISSIONS', platform: 'leetcode', ids: ['1'] }),
+    ).toBe(true);
+    expect(
+      isContentRequest({ type: 'FILTER_UNKNOWN_SUBMISSIONS', platform: 'x', ids: ['1'] }),
+    ).toBe(false);
+    expect(isContentRequest({ type: 'GET_STATUS' })).toBe(false);
+    expect(isImportCommand({ type: 'START_IMPORT', restart: false })).toBe(true);
+    expect(isImportCommand({ type: 'START_IMPORT' })).toBe(false);
   });
 });

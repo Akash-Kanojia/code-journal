@@ -65,6 +65,7 @@ async function createServices(): Promise<Services> {
     isAuthenticated: () => auth.isAuthenticated(),
     onAuthRejected: async () => {
       await auth.disconnect();
+      provider.forgetIdentity();
       await ext.storage.local.set({
         [AUTH_ERROR_KEY]: 'GitHub rejected the saved credentials. Connect GitHub again.',
       });

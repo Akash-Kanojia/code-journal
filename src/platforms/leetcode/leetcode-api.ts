@@ -49,12 +49,37 @@ const QUESTION_QUERY = `query codeJournalQuestion($titleSlug: String!) {
 }`;
 
 // Only the fields needed to recover a submission; no user fields are requested.
+// Only the user's own submission data; no user fields are requested. Field names validated
+// against leetcode.com's schema (2026-10-04).
 const DETAILS_QUERY = `query codeJournalSubmission($submissionId: Int!) {
   submissionDetails(submissionId: $submissionId) {
-    code timestamp lang { name }
+    code timestamp statusCode runtimeDisplay totalCorrect totalTestcases
+    lastTestcase expectedOutput codeOutput compileError runtimeError
+    lang { name }
     question { questionId questionFrontendId title titleSlug difficulty }
   }
 }`;
+
+// All of the user's submissions, newest first, 20 per page.
+const HISTORY_QUERY = `query codeJournalHistory($offset: Int!, $limit: Int!, $lastKey: String) {
+  submissionList(offset: $offset, limit: $limit, lastKey: $lastKey) {
+    lastKey hasNext
+    submissions { id titleSlug statusDisplay lang timestamp isPending }
+  }
+}`;
+
+export const HISTORY_PAGE_SIZE = 20;
+
+/** An HTTP failure while importing history; `retryAfterMs` is set for rate limiting (429). */
+export class LeetCodeHttpError extends Error {
+  constructor(
+    readonly status: number,
+    readonly retryAfterMs?: number,
+  ) {
+    super(`LeetCode returned HTTP ${String(status)}`);
+    this.name = 'LeetCodeHttpError';
+  }
+}
 
 export interface LeetCodeApiDeps {
   fetch: typeof fetch;
@@ -66,19 +91,72 @@ export interface ProblemLookupDeps extends LeetCodeApiDeps {
   readNextData: () => string | undefined;
 }
 
+function postGraphql(
+  deps: LeetCodeApiDeps,
+  operationName: string,
+  query: string,
+  variables: Record<string, unknown>,
+): Promise<Response> {
+  return deps.fetch(`${LEETCODE_ORIGIN}/graphql/`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ operationName, query, variables }),
+    signal: AbortSignal.timeout(deps.timeoutMs ?? 5000),
+  });
+}
+
 async function graphql(
   deps: LeetCodeApiDeps,
   operationName: string,
   query: string,
   variables: Record<string, unknown>,
 ): Promise<string | undefined> {
-  const response = await deps.fetch(`${LEETCODE_ORIGIN}/graphql/`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ operationName, query, variables }),
-    signal: AbortSignal.timeout(deps.timeoutMs ?? 5000),
-  });
+  const response = await postGraphql(deps, operationName, query, variables);
   return response.ok ? response.text() : undefined;
+}
+
+/** Like `graphql`, but HTTP failures throw `LeetCodeHttpError` so callers can back off. */
+async function graphqlOrThrow(
+  deps: LeetCodeApiDeps,
+  operationName: string,
+  query: string,
+  variables: Record<string, unknown>,
+): Promise<string> {
+  const response = await postGraphql(deps, operationName, query, variables);
+  if (!response.ok) {
+    const retryAfter = response.headers.get('retry-after');
+    const seconds =
+      retryAfter !== null && /^\d+$/.test(retryAfter) ? Number(retryAfter) : undefined;
+    throw new LeetCodeHttpError(
+      response.status,
+      seconds === undefined ? undefined : seconds * 1000,
+    );
+  }
+  return response.text();
+}
+
+/** One page of the signed-in user's submission history (`text` is the raw response). */
+export function fetchHistoryPage(
+  offset: number,
+  lastKey: string | undefined,
+  deps: LeetCodeApiDeps,
+): Promise<string> {
+  return graphqlOrThrow(deps, 'codeJournalHistory', HISTORY_QUERY, {
+    offset,
+    limit: HISTORY_PAGE_SIZE,
+    lastKey: lastKey ?? null,
+  });
+}
+
+/** Code and result of one submission, for the history import. Throws on HTTP failure. */
+export async function fetchSubmissionRecord(
+  submissionId: string,
+  deps: LeetCodeApiDeps,
+): Promise<LeetCodeSubmissionDetails | undefined> {
+  const text = await graphqlOrThrow(deps, 'codeJournalSubmission', DETAILS_QUERY, {
+    submissionId: Number(submissionId),
+  });
+  return parseSubmissionDetailsResponse(text);
 }
 
 /**

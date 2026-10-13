@@ -1,0 +1,34 @@
+{
+  "data": {
+    "submissionList": {
+      "lastKey": "cursor-1",
+      "hasNext": true,
+      "submissions": [
+        {
+          "id": "1000000012",
+          "titleSlug": "two-sum",
+          "statusDisplay": "Accepted",
+          "lang": "cpp",
+          "timestamp": "1714900000",
+          "isPending": "Not Pending"
+        },
+        {
+          "id": "1000000011",
+          "titleSlug": "two-sum",
+          "statusDisplay": "Wrong Answer",
+          "lang": "cpp",
+          "timestamp": "1714800000",
+          "isPending": "Not Pending"
+        },
+        {
+          "id": "1000000010",
+          "titleSlug": "two-sum",
+          "statusDisplay": "Pending",
+          "lang": "cpp",
+          "timestamp": "1714700000",
+          "isPending": "Pending"
+        }
+      ]
+    }
+  }
+}

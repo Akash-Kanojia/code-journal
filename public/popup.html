@@ -27,7 +27,7 @@
         >
         <details id="client-id-details">
           <summary>OAuth App client id</summary>
-          <input id="client-id" placeholder="Iv1.… / Ov23…" spellcheck="false" />
+          <input id="client-id" placeholder="Ov23… (OAuth App client id)" spellcheck="false" />
         </details>
         <div class="actions"><button id="connect">Connect GitHub</button></div>
       </div>
@@ -73,6 +73,20 @@
         <button id="sync-now" class="secondary">Sync now</button>
         <button id="retry-failed" class="secondary">Retry failed</button>
       </div>
+    </section>
+
+    <section id="import">
+      <h2>Import past submissions</h2>
+      <p class="row"><span>LeetCode</span><strong id="import-status">Not started</strong></p>
+      <p class="hint">
+        Run from a leetcode.com tab while signed in. Commits are dated to when you originally
+        submitted; files are numbered after attempts already in the repository.
+      </p>
+      <div class="actions">
+        <button id="import-cancel" class="secondary" hidden>Stop</button>
+        <button id="import-start" class="secondary">Import from this tab</button>
+      </div>
+      <p class="error" id="import-error" hidden></p>
     </section>
 
     <section id="history">

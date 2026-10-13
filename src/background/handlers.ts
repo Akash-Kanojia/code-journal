@@ -1,6 +1,14 @@
 import type { Logger } from '../core/logger';
 import { submissionKey } from '../core/models/coding-submission';
-import type { CaptureAck, PopupRequest, SubmissionCapturedRequest } from '../core/types/messages';
+import { isCodingSubmission } from '../core/models/validate';
+import { importProgressKey, type ImportProgress } from '../core/types/import';
+import type {
+  CaptureAck,
+  ContentRequest,
+  ImportAck,
+  PopupRequest,
+  SubmissionCapturedRequest,
+} from '../core/types/messages';
 import type { StatusView } from '../core/types/status';
 import { resumeConnect, startConnect } from './auth-flow';
 import { readLastSync, runSync } from './scheduler';
@@ -31,18 +39,64 @@ export async function handleCapture(
   return { created, key };
 }
 
+/** Persists a history-import batch. Every item is validated; invalid ones are counted, not stored. */
+async function handleImported(submissions: unknown[], logger: Logger): Promise<ImportAck> {
+  const { store } = await getServices();
+  const ack: ImportAck = { created: 0, existing: 0, rejected: 0 };
+  for (const submission of submissions) {
+    if (!isCodingSubmission(submission)) {
+      ack.rejected++;
+      continue;
+    }
+    const { created } = await store.save(submission, new Date());
+    if (created) ack.created++;
+    else ack.existing++;
+  }
+  logger.info('Imported submissions persisted', { ...ack });
+  if (ack.created > 0) void runSync(logger, 'imported');
+  return ack;
+}
+
+export async function handleContentRequest(
+  request: ContentRequest,
+  logger: Logger,
+): Promise<unknown> {
+  switch (request.type) {
+    case 'SUBMISSION_CAPTURED':
+      return handleCapture(request, logger);
+    case 'SUBMISSIONS_IMPORTED':
+      return handleImported(request.submissions, logger);
+    case 'FILTER_UNKNOWN_SUBMISSIONS': {
+      const { store } = await getServices();
+      const known = await Promise.all(
+        request.ids.map((id) => store.get(submissionKey({ platform: request.platform, id }))),
+      );
+      return request.ids.filter((_, i) => known[i] === undefined);
+    }
+  }
+}
+
+async function readImports(): Promise<StatusView['imports']> {
+  const key = importProgressKey('leetcode');
+  const stored = (await ext.storage.local.get(key))[key] as ImportProgress | undefined;
+  return stored === undefined ? {} : { leetcode: stored };
+}
+
 export async function handlePopupRequest(request: PopupRequest, logger: Logger): Promise<unknown> {
   const { store, auth, provider } = await getServices();
   switch (request.type) {
     case 'GET_STATUS': {
-      const [settings, authState, counts, recent, lastSync, authError] = await Promise.all([
-        loadSettings(),
-        auth.getState(),
-        store.counts(),
-        store.listRecent(RECENT_LIMIT),
-        readLastSync(),
-        ext.storage.local.get(AUTH_ERROR_KEY),
-      ]);
+      const [settings, authState, counts, recent, lastSync, authError, imports] = await Promise.all(
+        [
+          loadSettings(),
+          auth.getState(),
+          store.counts(),
+          store.listRecent(RECENT_LIMIT),
+          readLastSync(),
+          ext.storage.local.get(AUTH_ERROR_KEY),
+          readImports(),
+        ],
+      );
       if (authState.status === 'pending') resumeConnect(logger);
       const view: StatusView = {
         auth: authState,
@@ -53,6 +107,7 @@ export async function handlePopupRequest(request: PopupRequest, logger: Logger):
         settings: { ...settings, clientId: settings.clientId ?? '' },
         counts,
         ...(lastSync === undefined ? {} : { lastSync }),
+        imports,
         recent: recent.map(({ record, sync }) => ({
           key: record.key,
           platform: record.submission.platform,
@@ -76,6 +131,7 @@ export async function handlePopupRequest(request: PopupRequest, logger: Logger):
       return null;
     case 'DISCONNECT_GITHUB':
       await auth.disconnect();
+      provider.forgetIdentity();
       return null;
     case 'LIST_REPOSITORIES': {
       const settings = await loadSettings();

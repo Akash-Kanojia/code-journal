@@ -7,6 +7,7 @@ import type {
 } from '../core/types/messages';
 import { createAdapterRegistry } from './adapters';
 import { deliverSubmission } from './deliver';
+import { listenForImportCommands } from './history-import';
 import { ext } from '../ext';
 
 const logger = createLogger('content');
@@ -19,6 +20,7 @@ function main(): void {
     return;
   }
   logger.info('Adapter started', { platform: adapter.platform });
+  listenForImportCommands(adapter, logger);
 
   const tracker = new SubmissionLifecycleTracker(createLogger('lifecycle'));
   const send = (request: SubmissionCapturedRequest) =>

@@ -1,11 +1,41 @@
 import type { CodingSubmission } from '../models/coding-submission';
 import { isCodingSubmission } from '../models/validate';
+import { isPlatform, type Platform } from './platform';
 
 /** Content script → background. The only message content scripts may send. */
 export interface SubmissionCapturedRequest {
   type: 'SUBMISSION_CAPTURED';
   submission: CodingSubmission;
 }
+
+/** Content script → background: a batch of past submissions from a history import. */
+export interface SubmissionsImportedRequest {
+  type: 'SUBMISSIONS_IMPORTED';
+  submissions: CodingSubmission[];
+}
+
+/** Content script → background: which of these submission ids are not stored yet? */
+export interface FilterUnknownRequest {
+  type: 'FILTER_UNKNOWN_SUBMISSIONS';
+  platform: Platform;
+  ids: string[];
+}
+
+export type ContentRequest =
+  SubmissionCapturedRequest | SubmissionsImportedRequest | FilterUnknownRequest;
+
+/** Popup → content script on a platform tab. */
+export type ImportCommand = { type: 'START_IMPORT'; restart: boolean } | { type: 'CANCEL_IMPORT' };
+
+export interface ImportAck {
+  created: number;
+  existing: number;
+  /** Items that failed validation. */
+  rejected: number;
+}
+
+/** Upper bound on one import batch, to keep messages small. */
+export const MAX_IMPORT_BATCH = 100;
 
 export interface RepositorySelection {
   owner: string;
@@ -35,7 +65,7 @@ export type PopupRequest =
   | { type: 'RETRY_FAILED' }
   | { type: 'SYNC_NOW' };
 
-export type RuntimeRequest = SubmissionCapturedRequest | PopupRequest;
+export type RuntimeRequest = ContentRequest | PopupRequest;
 
 export type RuntimeResponse<T = unknown> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -51,6 +81,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function isSubmissionCapturedRequest(value: unknown): value is SubmissionCapturedRequest {
   return (
     isRecord(value) && value.type === 'SUBMISSION_CAPTURED' && isCodingSubmission(value.submission)
+  );
+}
+
+/** Messages content scripts may send. Each is validated; submissions are untrusted input. */
+export function isContentRequest(value: unknown): value is ContentRequest {
+  if (isSubmissionCapturedRequest(value)) return true;
+  if (!isRecord(value)) return false;
+  if (value.type === 'SUBMISSIONS_IMPORTED') {
+    // Items are validated one by one by the receiver, so one bad item does not drop the batch.
+    return Array.isArray(value.submissions) && value.submissions.length <= MAX_IMPORT_BATCH;
+  }
+  if (value.type === 'FILTER_UNKNOWN_SUBMISSIONS') {
+    return (
+      isPlatform(value.platform) &&
+      Array.isArray(value.ids) &&
+      value.ids.length <= MAX_IMPORT_BATCH &&
+      value.ids.every((id) => typeof id === 'string')
+    );
+  }
+  return false;
+}
+
+export function isImportCommand(value: unknown): value is ImportCommand {
+  return (
+    isRecord(value) &&
+    ((value.type === 'START_IMPORT' && typeof value.restart === 'boolean') ||
+      value.type === 'CANCEL_IMPORT')
   );
 }
 

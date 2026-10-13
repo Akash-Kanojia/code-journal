@@ -1,8 +1,8 @@
-import type { RepositorySelection } from '../core/types/messages';
+import type { ImportCommand, RepositorySelection, RuntimeResponse } from '../core/types/messages';
 import type { RepositoryView, StatusView } from '../core/types/status';
-import { call } from './api';
-import { describeSubmission, describeSync, statusIcon } from './format';
 import { ext } from '../ext';
+import { call } from './api';
+import { describeImport, describeSubmission, describeSync, statusIcon } from './format';
 
 function el<T extends HTMLElement = HTMLElement>(
   id: string,
@@ -40,6 +40,10 @@ const ui = {
   syncNow: el('sync-now', HTMLButtonElement),
   retryFailed: el('retry-failed', HTMLButtonElement),
   recent: el('recent'),
+  importStatus: el('import-status'),
+  importStart: el('import-start', HTMLButtonElement),
+  importCancel: el('import-cancel', HTMLButtonElement),
+  importError: el('import-error'),
 };
 
 let status: StatusView | undefined;
@@ -150,6 +154,34 @@ function renderRecent(view: StatusView): void {
   );
 }
 
+function renderImport(view: StatusView): void {
+  const progress = view.imports.leetcode;
+  const described = describeImport(progress, Date.now());
+  ui.importStatus.textContent = described.text;
+  ui.importStart.textContent = described.startLabel;
+  ui.importStart.disabled = described.running;
+  show(ui.importCancel, described.running);
+  if (progress?.state === 'failed') message(ui.importError, progress.error);
+}
+
+/** Sends an import command to the content script of the active tab. */
+async function commandActiveTab(command: ImportCommand): Promise<void> {
+  const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id === undefined) throw new Error('No active tab');
+  let response: RuntimeResponse | undefined;
+  try {
+    response = await ext.tabs.sendMessage<ImportCommand, RuntimeResponse | undefined>(
+      tab.id,
+      command,
+    );
+  } catch {
+    throw new Error('Open leetcode.com in this tab (signed in), reload it, then try again.');
+  }
+  if (response === undefined)
+    throw new Error('The page did not respond. Reload the tab and try again.');
+  if (!response.ok) throw new Error(response.error);
+}
+
 async function refresh(): Promise<void> {
   try {
     status = await call<StatusView>({ type: 'GET_STATUS' });
@@ -162,6 +194,7 @@ async function refresh(): Promise<void> {
   renderRepositorySelection(status);
   renderSync(status);
   renderRecent(status);
+  renderImport(status);
   schedulePoll(status.auth.status === 'pending' ? 2000 : 5000);
 }
 
@@ -307,6 +340,22 @@ ui.saveSettings.addEventListener('click', () => {
       await refresh();
     }
   })();
+});
+
+ui.importStart.addEventListener('click', () => {
+  message(ui.importError, undefined);
+  void commandActiveTab({ type: 'START_IMPORT', restart: false })
+    .catch((error: unknown) => {
+      message(ui.importError, errorText(error));
+    })
+    .finally(() => void refresh());
+});
+ui.importCancel.addEventListener('click', () => {
+  void commandActiveTab({ type: 'CANCEL_IMPORT' })
+    .catch((error: unknown) => {
+      message(ui.importError, errorText(error));
+    })
+    .finally(() => void refresh());
 });
 
 ui.syncNow.addEventListener('click', () => {

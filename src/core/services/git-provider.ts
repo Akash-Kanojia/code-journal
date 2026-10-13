@@ -28,6 +28,11 @@ export interface CommitRequest {
   parent: BranchHead;
   files: FileChange[];
   message: string;
+  /**
+   * ISO time used as the commit's author and committer date (the submission time), so the
+   * history reflects when the work happened even if the sync ran later. Defaults to now.
+   */
+  date?: string;
 }
 
 export type GitProviderErrorKind =

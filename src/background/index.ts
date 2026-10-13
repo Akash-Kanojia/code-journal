@@ -1,11 +1,7 @@
 import { createLogger } from '../core/logger';
-import {
-  isPopupRequest,
-  isSubmissionCapturedRequest,
-  type RuntimeResponse,
-} from '../core/types/messages';
+import { isContentRequest, isPopupRequest, type RuntimeResponse } from '../core/types/messages';
 import { resumeConnect } from './auth-flow';
-import { handleCapture, handlePopupRequest } from './handlers';
+import { handleContentRequest, handlePopupRequest } from './handlers';
 import {
   ALARM_AUTH_POLL,
   ALARM_SYNC_PERIODIC,
@@ -71,9 +67,9 @@ ext.alarms.onAlarm.addListener((alarm) => {
 
 ext.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
   if (sender.id !== ext.runtime.id) return false;
-  if (isSubmissionCapturedRequest(message)) {
-    // Content scripts may only submit captures; they never receive credentials or settings.
-    return respond(sendResponse, handleCapture(message, logger));
+  if (isContentRequest(message)) {
+    // Content scripts may only submit captures and imports; they never receive credentials or settings.
+    return respond(sendResponse, handleContentRequest(message, logger));
   }
   if (isPopupRequest(message)) {
     if (!isFromExtensionPage(sender)) {

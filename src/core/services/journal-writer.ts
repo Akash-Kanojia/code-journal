@@ -106,6 +106,7 @@ export class JournalWriter {
       branch,
       parent: head,
       message: commitMessage(submission, attempt),
+      date: submission.submittedAt,
       files: [
         { path, content: submission.code },
         { path: metadataPath, content: serializeMetadata(metadata) },

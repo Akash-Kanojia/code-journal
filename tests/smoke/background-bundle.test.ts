@@ -140,13 +140,33 @@ describe.skipIf(!existsSync(BUNDLE))('built background worker', () => {
         ),
     ).toBe(submission.code);
 
+    // A history import batch: one new (backdated) submission, one already stored, one invalid.
+    const past = leetCodeSubmission({ submittedAt: '2024-01-02T03:04:05.000Z', raw: undefined });
+    expect(
+      await send(
+        { type: 'FILTER_UNKNOWN_SUBMISSIONS', platform: 'leetcode', ids: [submission.id, past.id] },
+        tab,
+      ),
+    ).toEqual({ ok: true, data: [past.id] });
+    expect(
+      await send(
+        { type: 'SUBMISSIONS_IMPORTED', submissions: [past, submission, { id: 'bogus' }] },
+        tab,
+      ),
+    ).toEqual({ ok: true, data: { created: 1, existing: 1, rejected: 1 } });
+    await send({ type: 'SYNC_NOW' }, popup);
+    expect(github.head('octo/journal')).toMatchObject({
+      message: 'LeetCode #1477 - Attempt 2 - Wrong Answer',
+      author: { date: '2024-01-02T03:04:05.000Z', email: '583231+octo@users.noreply.github.com' },
+    });
+
     const status = await send({ type: 'GET_STATUS' }, popup);
     expect(status).toMatchObject({
       ok: true,
       data: {
         auth: { status: 'connected', login: 'octo' },
-        counts: { pending: 0, synced: 1, failed: 0 },
-        recent: [{ status: 'accepted', syncStatus: 'synced' }],
+        counts: { pending: 0, synced: 2, failed: 0 },
+        recent: [{ status: 'accepted', syncStatus: 'synced' }, { syncStatus: 'synced' }],
       },
     });
     expect(JSON.stringify(status)).not.toContain(github.token);

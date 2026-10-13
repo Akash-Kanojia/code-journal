@@ -1,7 +1,42 @@
 import type { SubmissionStatus } from '../core/models/submission-result';
 import { STATUS_LABELS } from '../core/journal/layout';
 import { PLATFORM_INFO } from '../core/platform-info';
+import type { ImportProgress } from '../core/types/import';
 import type { RecentSubmissionView, StatusView } from '../core/types/status';
+
+/** A running import that has not reported for this long was interrupted (tab closed). */
+const STALE_IMPORT_MS = 2 * 60_000;
+
+export interface ImportView {
+  text: string;
+  running: boolean;
+  startLabel: string;
+}
+
+export function describeImport(progress: ImportProgress | undefined, now: number): ImportView {
+  if (progress === undefined) {
+    return { text: 'Not started', running: false, startLabel: 'Import from this tab' };
+  }
+  const counts = `${String(progress.imported)} imported, ${String(progress.existing)} already saved`;
+  const skipped = progress.skipped > 0 ? `, ${String(progress.skipped)} skipped` : '';
+  const interrupted = now - Date.parse(progress.updatedAt) > STALE_IMPORT_MS;
+  switch (progress.state) {
+    case 'running':
+      return interrupted
+        ? { text: `Interrupted (${counts})`, running: false, startLabel: 'Resume from this tab' }
+        : { text: `Importing… ${counts}${skipped}`, running: true, startLabel: 'Importing…' };
+    case 'done':
+      return {
+        text: `Done ${new Date(progress.finishedAt ?? progress.updatedAt).toLocaleDateString()}: ${counts}${skipped}`,
+        running: false,
+        startLabel: 'Check for new submissions',
+      };
+    case 'cancelled':
+      return { text: `Stopped (${counts})`, running: false, startLabel: 'Resume from this tab' };
+    case 'failed':
+      return { text: `Failed (${counts})`, running: false, startLabel: 'Resume from this tab' };
+  }
+}
 
 export function statusIcon(status: SubmissionStatus): {
   icon: string;

@@ -3,11 +3,19 @@
  * (commits, trees, refs) so tests verify behaviour — one commit per submission, file
  * contents, fast-forward checks — rather than canned responses.
  */
+export interface Signature {
+  name: string;
+  email: string;
+  date: string;
+}
+
 export interface FakeCommit {
   sha: string;
   message: string;
   parents: string[];
   files: Map<string, string>;
+  author?: Signature;
+  committer?: Signature;
 }
 
 interface Repo {
@@ -113,7 +121,9 @@ export class FakeGitHub {
     headers: Headers,
   ): Response {
     const path = url.pathname;
-    if (method === 'GET' && path === '/user') return json(200, { login: 'octo' });
+    if (method === 'GET' && path === '/user') {
+      return json(200, { login: 'octo', id: 583231, name: 'The Octocat' });
+    }
     if (method === 'GET' && path === '/user/repos') {
       const page = Number(url.searchParams.get('page') ?? '1');
       const all = [...this.repos.values()].map((r) => ({
@@ -175,8 +185,13 @@ export class FakeGitHub {
     if (method === 'POST' && rest === 'git/commits') {
       const files = this.trees.get(String(body.tree));
       if (files === undefined) return json(422, { message: 'Tree SHA does not exist' });
-      const commit = this.commit(files, body.parents as string[], String(body.message));
-      return json(201, { sha: commit });
+      const sha = this.commit(files, body.parents as string[], String(body.message));
+      const created = this.commits.get(sha);
+      if (created !== undefined) {
+        if (body.author !== undefined) created.author = body.author as Signature;
+        if (body.committer !== undefined) created.committer = body.committer as Signature;
+      }
+      return json(201, { sha });
     }
     if (method === 'PATCH' && rest.startsWith('git/refs/heads/')) {
       this.beforeRefUpdate?.();

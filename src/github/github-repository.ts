@@ -58,6 +58,21 @@ export function parseRepository(value: RepoResponse): Repository | undefined {
   };
 }
 
+/** Who commits are attributed to. */
+export interface CommitIdentity {
+  name: string;
+  /** GitHub's noreply address: attributes commits to the account without exposing its email. */
+  email: string;
+}
+
+export function parseIdentity(value: unknown): CommitIdentity | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const user = value as { id?: unknown; login?: unknown; name?: unknown };
+  if (typeof user.id !== 'number' || typeof user.login !== 'string') return undefined;
+  const name = typeof user.name === 'string' && user.name.trim() !== '' ? user.name : user.login;
+  return { name, email: `${String(user.id)}+${user.login}@users.noreply.github.com` };
+}
+
 function readSha(value: unknown, what: string): string {
   if (typeof value === 'object' && value !== null && 'sha' in value) {
     const sha = value.sha;
@@ -71,10 +86,31 @@ function readSha(value: unknown, what: string): string {
  * (tree → commit → ref) so one submission is exactly one commit.
  */
 export class GitHubRepositoryProvider implements GitProvider {
+  private identity: Promise<CommitIdentity> | undefined;
+
   constructor(
     private readonly client: GitHubClient,
     private readonly hasToken: () => Promise<boolean>,
   ) {}
+
+  /** Call when the connected account may have changed (connect, disconnect, rejected token). */
+  forgetIdentity(): void {
+    this.identity = undefined;
+  }
+
+  private getIdentity(): Promise<CommitIdentity> {
+    this.identity ??= this.client.requestJson<unknown>('/user').then((user) => {
+      const identity = parseIdentity(user);
+      if (identity === undefined) {
+        throw new GitProviderError('server', 'GitHub returned an unexpected user response');
+      }
+      return identity;
+    });
+    this.identity.catch(() => {
+      this.identity = undefined;
+    });
+    return this.identity;
+  }
 
   isAuthenticated(): Promise<boolean> {
     return this.hasToken();
@@ -153,13 +189,20 @@ export class GitHubRepositoryProvider implements GitProvider {
         })),
       },
     });
+    const body: Record<string, unknown> = {
+      message: request.message,
+      tree: readSha(tree, 'tree'),
+      parents: [request.parent.commitSha],
+    };
+    if (request.date !== undefined) {
+      // Git requires a name and email whenever a date is given.
+      const signature = { ...(await this.getIdentity()), date: request.date };
+      body.author = signature;
+      body.committer = signature;
+    }
     const commit = await this.client.requestJson<unknown>(`${base}/git/commits`, {
       method: 'POST',
-      body: {
-        message: request.message,
-        tree: readSha(tree, 'tree'),
-        parents: [request.parent.commitSha],
-      },
+      body,
     });
     const commitSha = readSha(commit, 'commit');
     // force: false — GitHub rejects the update (422) if the branch moved, which surfaces as a conflict.

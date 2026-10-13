@@ -25,7 +25,7 @@ export async function startConnect(logger: Logger): Promise<DeviceAuthorization>
 export function resumeConnect(logger: Logger): void {
   if (polling !== undefined) return;
   polling = (async () => {
-    const { auth } = await getServices();
+    const { auth, provider } = await getServices();
     const state = await auth.getState();
     if (state.status !== 'pending') return;
     const clientId = effectiveClientId(await loadSettings());
@@ -35,6 +35,7 @@ export function resumeConnect(logger: Logger): void {
     const result = await auth.waitForAuthorization(clientId, heartbeat);
     await ext.alarms.clear(ALARM_AUTH_POLL);
     if (result.status === 'connected') {
+      provider.forgetIdentity();
       await runSync(logger, 'connected');
     } else if (result.status === 'failed') {
       logger.warn('GitHub authorization did not complete', { error: result.error });

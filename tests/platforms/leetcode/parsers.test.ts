@@ -107,7 +107,7 @@ describe('question parsers', () => {
 
 describe('submission details parser', () => {
   it('extracts the stored code, language, time and question', () => {
-    expect(parseSubmissionDetailsResponse(fixtures.submissionDetails)).toEqual({
+    expect(parseSubmissionDetailsResponse(fixtures.submissionDetails)).toMatchObject({
       code: (
         JSON.parse(fixtures.submissionDetails) as { data: { submissionDetails: { code: string } } }
       ).data.submissionDetails.code,

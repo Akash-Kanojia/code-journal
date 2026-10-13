@@ -1,0 +1,25 @@
+{
+  "data": {
+    "submissionDetails": {
+      "code": "class Solution { /* attempt 1000000011 */ };",
+      "timestamp": 1714800000,
+      "statusCode": 11,
+      "runtimeDisplay": "N/A",
+      "totalCorrect": 3,
+      "totalTestcases": 65,
+      "lastTestcase": "[3,2,4]\n6",
+      "expectedOutput": "[1,2]",
+      "codeOutput": "[0,0]",
+      "compileError": null,
+      "runtimeError": null,
+      "lang": { "name": "cpp" },
+      "question": {
+        "questionId": "1",
+        "questionFrontendId": "1",
+        "title": "Two Sum",
+        "titleSlug": "two-sum",
+        "difficulty": "Easy"
+      }
+    }
+  }
+}

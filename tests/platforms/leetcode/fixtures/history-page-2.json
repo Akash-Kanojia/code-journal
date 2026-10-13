@@ -1,0 +1,18 @@
+{
+  "data": {
+    "submissionList": {
+      "lastKey": null,
+      "hasNext": false,
+      "submissions": [
+        {
+          "id": "1000000009",
+          "titleSlug": "two-sum",
+          "statusDisplay": "Compile Error",
+          "lang": "python3",
+          "timestamp": 1714600000,
+          "isPending": "Not Pending"
+        }
+      ]
+    }
+  }
+}

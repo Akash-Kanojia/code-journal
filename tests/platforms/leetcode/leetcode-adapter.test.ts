@@ -204,6 +204,7 @@ describe('LeetCodeAdapter', () => {
     const details = vi.fn(() =>
       Promise.resolve<LeetCodeSubmissionDetails>({
         code: 'recovered code',
+        record: {},
         language: 'cpp',
         submittedAt: '2026-09-28T11:59:00.000Z',
         question: {

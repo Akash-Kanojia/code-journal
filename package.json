@@ -10,7 +10,12 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build:firefox": "npm run build && node scripts/build-firefox.js"
+    "build:firefox": "npm run build && node scripts/build-firefox.js",
+    "package:firefox": "node scripts/package.js firefox",
+    "package:chrome": "node scripts/package.js chrome",
+    "package:source": "node scripts/package.js source",
+    "sign:firefox": "web-ext sign --source-dir dist-firefox --artifacts-dir artifacts --channel unlisted --upload-source-code artifacts/code-journal-source-$npm_package_version.zip",
+    "icons": "python3 scripts/generate-icons.py"
   },
   "license": "MIT",
   "type": "module",
@@ -25,6 +30,15 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.1",
-    "vitest": "^5.0.2"
-  }
+    "vitest": "^5.0.2",
+    "web-ext": "^10.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Akash-Kanojia/code-journal.git"
+  },
+  "author": "Akash Kanojia"
 }

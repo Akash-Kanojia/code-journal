@@ -1,4 +1,5 @@
 import type { SubmissionStatus } from '../models/submission-result';
+import type { ImportProgress } from './import';
 import type { Platform } from './platform';
 import type { RepositorySelection } from './messages';
 
@@ -48,6 +49,8 @@ export interface StatusView {
     error?: string;
   };
   recent: RecentSubmissionView[];
+  /** History imports by platform, when one was ever started. */
+  imports: Partial<Record<Platform, ImportProgress>>;
 }
 
 export interface RepositoryView extends RepositorySelection {

@@ -16,10 +16,12 @@ delete manifest.minimum_chrome_version;
 manifest.background = { scripts: ['background.js'], type: 'module' };
 manifest.browser_specific_settings = {
   gecko: {
-    id: 'code-journal@extension',
+    // Permanent once published to addons.mozilla.org; never change it after the first upload.
+    id: 'code-journal@akash-kanojia',
     strict_min_version: '140.0',
-    // Code Journal has no server: nothing is collected by the developer.
-    data_collection_permissions: { required: ['none'] },
+    // No developer server, but submitted code (page content) is sent to the user's GitHub
+    // repository, a third party, so it is declared. See PRIVACY.md.
+    data_collection_permissions: { required: ['websiteContent'] },
   },
 };
 writeFileSync(new URL('manifest.json', target), `${JSON.stringify(manifest, null, 2)}\n`);

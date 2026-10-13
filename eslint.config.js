@@ -4,7 +4,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dist-firefox', 'node_modules'] },
+  { ignores: ['dist', 'dist-firefox', 'artifacts', 'web-ext-artifacts', 'node_modules'] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {
@@ -19,6 +19,10 @@ export default tseslint.config(
   {
     files: ['**/*.js'],
     ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: { globals: globals.node },
   },
   prettier,
 );

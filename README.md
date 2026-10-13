@@ -92,10 +92,8 @@ the background as an event page and needs an add-on id.
    permissions for the user to grant.
 5. Reload any open LeetCode/GFG tabs.
 
-Temporary add-ons are removed when Firefox quits. For a permanent install, either sign it as an
-unlisted add-on (`npx web-ext sign -s dist-firefox --channel unlisted` with AMO API keys) and
-install the `.xpi`, or use Firefox Developer Edition/Nightly with `xpinstall.signatures.required`
-set to `false` in `about:config`. Background logs: `about:debugging` → Code Journal → **Inspect**.
+Temporary add-ons are removed when Firefox quits. For a permanent install, publish or self-sign it:
+see [docs/publishing.md](docs/publishing.md) (`npm run sign:firefox` produces an installable `.xpi`). Background logs: `about:debugging` → Code Journal → **Inspect**.
 
 ## GitHub setup
 
@@ -209,6 +207,35 @@ GFG - Two Sum - Pair with Given Sum - Attempt 1 - Wrong Answer
 Source code is never duplicated into metadata, and raw platform payloads are not committed.
 Long testcases and error messages are truncated to 2,000 characters in metadata.
 
+## Importing past submissions (LeetCode)
+
+Submissions you made before installing Code Journal can be imported, each committed with its
+**original submission date**. Your contribution graph then shows the days you actually practised.
+
+1. Connect GitHub and save a repository and branch.
+2. Open any leetcode.com page in a tab where you are signed in to LeetCode.
+3. Open the popup → **Import past submissions** → **Import from this tab**.
+
+How it works:
+- The import reads your history from LeetCode (`submissionList`, then `submissionDetails` for the
+  code of each submission). It makes about one request per second, so a large history takes a
+  while. Keep the tab open; the popup shows progress.
+- Accepted and failed attempts are imported alike. Submissions already captured or imported are
+  skipped, so running it again only adds new ones ("Check for new submissions").
+- If the tab is closed or you click **Stop**, it resumes from where it stopped next time.
+- Rate limits from LeetCode are waited out automatically.
+- Imported attempts are **appended**: on a problem that already has `001`–`003`, older imported
+  attempts become `004`, `005`, … Existing files are never rewritten. Each commit carries the
+  original date, so the dates are right even though `git log` lists the commits in import order.
+- Memory is not recorded for imported submissions (its value in LeetCode's history API is
+  unverified). Runtime, test counts, failing testcase and errors are recorded.
+- GeeksforGeeks history import is not available. Whether GFG exposes past submissions with
+  their code still needs to be checked with a signed-in account.
+
+Commit dates: every commit, live or imported, uses the submission time as its author and
+committer date. Commits are attributed to your account through GitHub's noreply address
+(`<id>+<login>@users.noreply.github.com`), so they count on your profile without exposing your email.
+
 ## Sync behaviour
 
 - Capture → IndexedDB → GitHub. An attempt is marked **synced** only after GitHub accepts the
@@ -218,7 +245,7 @@ Long testcases and error messages are truncated to 2,000 characters in metadata.
   honoured). After 10 failed retries, or on a request GitHub rejects as invalid, the attempt is
   marked **failed** until you click **Retry failed**.
 - Attempts are committed strictly in submission order, so attempt numbers match the order you
-  submitted.
+  submitted (imported history is appended after attempts already in the repository).
 - If GitHub rejects the token (revoked or expired), sync pauses without using up retries, and the
   popup asks you to reconnect.
 - Retries use `chrome.alarms` (and a 15-minute safety alarm), so they survive the service worker
@@ -234,6 +261,12 @@ Long testcases and error messages are truncated to 2,000 characters in metadata.
 - Page scripts forward only URL, method, status and bodies of the submission endpoints. They never
   forward headers or cookies.
 - Logs never contain source code, tokens, cookies or auth headers.
+
+## Publishing
+
+Release steps for addons.mozilla.org and the Chrome Web Store (packaging scripts, listing text,
+permission justifications, data declarations) are in [docs/publishing.md](docs/publishing.md).
+The privacy policy is [PRIVACY.md](PRIVACY.md).
 
 ## Troubleshooting
 

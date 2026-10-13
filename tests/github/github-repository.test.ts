@@ -3,7 +3,11 @@ import { createLogger } from '../../src/core/logger';
 import { GitProviderError } from '../../src/core/services/git-provider';
 import { JournalWriter, type JournalTarget } from '../../src/core/services/journal-writer';
 import { GitHubClient } from '../../src/github/github-client';
-import { GitHubRepositoryProvider, toBase64 } from '../../src/github/github-repository';
+import {
+  GitHubRepositoryProvider,
+  parseIdentity,
+  toBase64,
+} from '../../src/github/github-repository';
 import { FakeGitHub } from '../helpers/fake-github';
 import { leetCodeSubmission } from '../helpers/submissions';
 
@@ -97,6 +101,31 @@ describe('JournalWriter on GitHub', () => {
     ]);
     // Each submission: one tree, one commit, one ref update.
     expect(github.requests.filter((r) => r.startsWith('PATCH'))).toHaveLength(3);
+  });
+
+  it('dates each commit to its submission, attributed to the account noreply address', async () => {
+    const submission = leetCodeSubmission({ submittedAt: '2024-03-05T08:09:10.000Z' });
+    await writer.write(target, submission);
+    await writer.write(target, leetCodeSubmission({ submittedAt: '2024-03-06T00:00:00.000Z' }));
+
+    const signature = {
+      name: 'The Octocat',
+      email: '583231+octo@users.noreply.github.com',
+      date: '2024-03-06T00:00:00.000Z',
+    };
+    expect(github.head(REPO)).toMatchObject({ author: signature, committer: signature });
+    const parent = github.commits.get(github.head(REPO)?.parents[0] ?? '');
+    expect(parent?.author?.date).toBe('2024-03-05T08:09:10.000Z');
+    // The account identity is looked up once and reused.
+    expect(github.requests.filter((r) => r === 'GET /user')).toHaveLength(1);
+  });
+
+  it('falls back to the login when the account has no display name', () => {
+    expect(parseIdentity({ id: 1, login: 'octo', name: null })).toEqual({
+      name: 'octo',
+      email: '1+octo@users.noreply.github.com',
+    });
+    expect(parseIdentity({ login: 'octo' })).toBeUndefined();
   });
 
   it('does not commit a submission that is already in the repository', async () => {

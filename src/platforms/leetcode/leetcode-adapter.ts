@@ -1,12 +1,19 @@
-import type { PlatformAdapter } from '../../core/adapters/platform-adapter';
+import type {
+  HistoryImporter,
+  HistoryImportSink,
+  PlatformAdapter,
+} from '../../core/adapters/platform-adapter';
 import { createLogger, type Logger } from '../../core/logger';
 import { isCompleteProblem, type ProblemReference } from '../../core/models/problem';
 import type { SubmissionEventListener } from '../../core/models/submission-event';
 import { subscribeToBridge, type BridgeMessage } from '../shared/bridge';
 import { InFlightSubmissions } from '../shared/in-flight';
+import { LeetCodeHistoryImporter, type HistoryImporterDeps } from './history-importer';
 import {
   classifyLeetCodeRequest,
+  fetchHistoryPage,
   fetchSubmissionDetails,
+  fetchSubmissionRecord,
   LEETCODE_CHANNEL,
   LEETCODE_ORIGIN,
   lookupProblem,
@@ -26,6 +33,8 @@ export interface LeetCodeAdapterDeps {
   fetchSubmissionDetails(submissionId: string): Promise<LeetCodeSubmissionDetails | undefined>;
   now(): Date;
   logger: Logger;
+  /** LeetCode requests and timing used by the history import. */
+  history?: Pick<HistoryImporterDeps, 'fetchPage' | 'fetchDetails' | 'sleep'>;
 }
 
 interface Tracked {
@@ -50,6 +59,17 @@ export class LeetCodeAdapter implements PlatformAdapter {
   start(listener: SubmissionEventListener): () => void {
     return this.deps.subscribe((message) => {
       this.handleMessage(message, listener);
+    });
+  }
+
+  createHistoryImporter(sink: HistoryImportSink): HistoryImporter {
+    const { history } = this.deps;
+    if (history === undefined) throw new Error('History import is not configured');
+    return new LeetCodeHistoryImporter({
+      ...history,
+      ...sink,
+      now: () => this.deps.now(),
+      logger: this.deps.logger,
     });
   }
 
@@ -256,6 +276,15 @@ export function createLeetCodeAdapter(): LeetCodeAdapter {
         readNextData: () => document.getElementById('__NEXT_DATA__')?.textContent ?? undefined,
       }),
     fetchSubmissionDetails: (id) => fetchSubmissionDetails(id, { fetch: pageFetch }),
+    history: {
+      fetchPage: (offset, lastKey) =>
+        fetchHistoryPage(offset, lastKey, { fetch: pageFetch, timeoutMs: 15_000 }),
+      fetchDetails: (id) => fetchSubmissionRecord(id, { fetch: pageFetch, timeoutMs: 15_000 }),
+      sleep: (ms) =>
+        new Promise((resolve) => {
+          setTimeout(resolve, ms);
+        }),
+    },
     subscribe: (handler) => subscribeToBridge(LEETCODE_CHANNEL, handler),
   });
 }

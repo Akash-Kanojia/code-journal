@@ -147,6 +147,14 @@ id/title is missing.
   should work but were not investigated.
 - Only `www.geeksforgeeks.org` is matched.
 
+## History Import
+
+Not implemented. GFG's client code references `user/problems/submissions/`, `/submissions/user/`
+and `problems/{slug}/submissions/latest/`. With a signed-in account it still needs checking
+whether any of these return past submissions **with their code and submission time**. If only
+the latest code per problem is available, it will not be imported, since that would mean
+inventing dates.
+
 ## Verifying with a real account
 
 1. Load the extension, open a GFG problem, open DevTools → Console, filter `CodeJournal`.
